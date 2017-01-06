@@ -1,7 +1,7 @@
 var mongoose = require('mongoose');
 var Schema = mongoose.Schema;
 
-var evaluationSchema = new Schema(
+var kudosSchema = new Schema(
     {
         to: String,
         by: String,
@@ -9,11 +9,12 @@ var evaluationSchema = new Schema(
             tag: String
         },
         comment: {type:String, required:true},
-        points: {type:Number, required:true}
+        points: {type:Number, required:true},
+        engagement: String
     },
     { timestamps: true }
 );
 
 
 
-module.exports = mongoose.model('Evaluation', evaluationSchema);
+module.exports = mongoose.model('Kudos', kudosSchema);

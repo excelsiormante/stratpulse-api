@@ -13,8 +13,8 @@ socialNetworkCredentials = {
     },
 
     google : {
-        clientID      : 'your-secret-clientID-here',
-        clientSecret  : 'your-client-secret-here',
+        clientID      : '235530962171-vbkld48aancdlpihgkfilsklecb3m0bu.apps.googleusercontent.com',
+        clientSecret  : 'vXSK0bfsbiSFcASDFDMhuZbx',
         callbackURL   : 'http://localhost:3000/auth/google/callback'
     }
 

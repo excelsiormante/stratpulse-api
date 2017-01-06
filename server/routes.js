@@ -3,7 +3,7 @@ var passport = require('passport');
 var router = Express.Router();
 var userController = require('./controllers/User');
 var authController = require('./controllers/Auth');
-var evaluationController = require('./controllers/Evaluation');
+var kudosController = require('./controllers/Kudos');
 var positionController = require('./controllers/Position');
 var oauth2Controller = require('./controllers/Oauth2');
 var clientController = require('./controllers/Client');
@@ -32,7 +32,7 @@ router.route('/client')
         clientController.createClient)
     .get(authController.isAuthenticated, 
         clientController.retrieveClient);
-router.route('/auth/password')
+router.route('/auth/password')  
     .post(authController.isResourceOwnerAuthenticated, 
         oauth2Controller.token);
 router.route('/auth/facebook')
@@ -40,35 +40,44 @@ router.route('/auth/facebook')
     .post(authController.isFbAuthenticated , authController.isResourceOwnerAuthenticated, oauth2Controller.token
     );
 
+router.route('/auth/google')
+    .get(authController.isGoogleAuthenticated , authController.isResourceOwnerAuthenticated, oauth2Controller.token
+    );
 
-//Evaluation Routes
-router.route('/evaluation')
+
+router.get('/auth/google/callback', function(error, response, body){
+    response.send(body);
+});
+
+
+//Kudos Routes
+router.route('/kudos')
     .get(
         authController.isBearerAuthenticated,
-        evaluationController.retrieveEvaluations)
-    .post(evaluationController.createEvaluation); 
+        kudosController.retrieveAllKudos)
+    .post(kudosController.createKudos); 
 
 
-router.route('/evaluation/:id')
+router.route('/kudos/:id')
     .get(
         authController.isBearerAuthenticated, 
-        evaluationController.retrieveEvaluation)
+        kudosController.retrieveKudos)
     .delete(
         authController.isBearerAuthenticated, 
-        evaluationController.deleteEvaluation)
+        kudosController.deleteKudos)
     .patch(
         authController.isBearerAuthenticated, 
-        evaluationController.updateEvaluation);
+        kudosController.updateKudos);
 
-router.route('/evaluation/:to')
+router.route('/kudos/:to')
     .get(
         authController.isBearerAuthenticated,
-        evaluationController.retrieveUserEvaluations); 
+        kudosController.retrieveAllUserKudos); 
 
-router.route('/evaluation/:by')
+router.route('/kudos/:by')
     .get(
         authController.isBearerAuthenticated,
-        evaluationController.retrieveEvaluationsByUser); 
+        kudosController.retrieveKudosMadeByUser); 
 
 
 //Position Routes

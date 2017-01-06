@@ -7,14 +7,17 @@ var LocalStrategy = require('passport-local').Strategy;
 var ClientPasswordStrategy  = require('passport-oauth2-client-password').Strategy;
 var BearerStrategy          = require('passport-http-bearer').Strategy;
 var ResourceOwnerPasswordStrategy  = require('passport-oauth2-resource-owner-password').Strategy;
+var FacebookTokenStrategy = require('passport-facebook-token');
+var GoogleStrategy = require('passport-google-oauth').OAuth2Strategy;
+//var GoogleTokenStrategy = require('passport-google-token').Strategy;
+
 //MODELS
 var UserModel = require('../models/User');
 var ClientModel = require('../models/Client');
 var AccessTokenModel = require('../models/AccessToken');
-var FacebookTokenStrategy = require('passport-facebook-token');
-
 
 var fbOptions = authConf.facebook;
+var googleOptions = authConf.google
 
 passport.use(new LocalStrategy(
     function(username, password, done) {
@@ -130,9 +133,100 @@ passport.use('facebook-token', new FacebookTokenStrategy(
     }
 ));
 
+
+
+passport.use(new GoogleStrategy({
+
+        clientID        : authConf.google.clientID,
+        clientSecret    : authConf.google.clientSecret,
+        callbackURL     : authConf.google.callbackURL,
+
+    },
+    function(token, refreshToken, profile, done) {
+
+        // make the code asynchronous
+        // User.findOne won't fire until we have all our data back from Google
+        process.nextTick(function() {
+
+            // try to find the user based on their google id
+            UserModel.findOne({ 'google.id' : profile.id }, function(err, user) {
+                if (err)
+                    return done(err);
+
+                if (user) {
+
+                    // if a user is found, log them in
+                    return done(null, user);
+                } else {
+                    // if the user isnt in our database, create a new user
+                    var newUser          = new User();
+
+                    // set all of the relevant information
+                    newUser.google.id    = profile.id;
+                    newUser.google.token = token;
+                    newUser.google.name  = profile.displayName;
+                    newUser.google.email = profile.emails[0].value; // pull the first email
+
+                    // save the user
+                    newUser.save(function(err) {
+                        if (err)
+                            throw err;
+                        return done(null, newUser);
+                    });
+                }
+            });
+        });
+
+    }));
+
+
+/*
+passport.use('google-token', new GoogleTokenStrategy(
+    {//authConf.google
+        clientID      : authConf.google.clientID,
+        clientSecret  : authConf.google.clientSecret,
+        callbackURL   : authConf.google.callbackURL,
+        passReqToCallback: true
+    },
+    function(req, token, refreshToken, profile,  done) {
+        UserModel.findOne({ 'email' : profile.emails[0].value }, function(err, user) {
+            if (err){
+                return done(err);
+            } if (user) {
+                req.body.username=user.username;
+                req.body.password=user.password;
+                return done(null, user); // user found, return that user
+            }
+
+            else {
+                    // if the user isnt in our database, create a new user
+                    var newUser          = new UserModel();
+
+                    // set all of the relevant information
+                    newUser.google.id    = profile.id;
+                    newUser.google.token = token;
+                    newUser.google.name  = profile.displayName;
+                    newUser.google.email = profile.emails[0].value; // pull the first email
+                    newUser.email = profile.emails[0].value;
+                    // save the user
+                    newUser.save(function(err) {
+                        if (err)
+                            throw err;
+                        return done(null, newUser);
+                    });
+            }
+
+        });
+    }
+));
+*/
+
+
+
 exports.isAuthenticated = passport.authenticate(['basic', 'bearer'], { session : false });
 exports.isBearerAuthenticated = passport.authenticate('bearer', { session: false });
 exports.isResourceOwnerAuthenticated = passport.authenticate('clientPassword', { session : false });
 exports.isFbAuthenticated = passport.authenticate('facebook-token',{session : false } );
+exports.isGoogleAuthenticated = passport.authenticate('google', { scope : ['profile', 'email'] });
 
 
