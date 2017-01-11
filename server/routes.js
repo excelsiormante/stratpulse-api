@@ -41,13 +41,17 @@ router.route('/auth/facebook')
     );
 
 router.route('/auth/google')
-    .get(authController.isGoogleAuthenticated , authController.isResourceOwnerAuthenticated, oauth2Controller.token
+    .get(authController.isGoogleAuthenticated, authController.isResourceOwnerAuthenticated, oauth2Controller.token
     );
 
 
-router.get('/auth/google/callback', function(error, response, body){
-    response.send(body);
-});
+router.get('/auth/google/callback', function(req, res, next) {
+    passport.authenticate('google', function(err, user_record) {
+      if (err) { return next(err) }
+      next();
+   })(req, res, next);
+
+  });
 
 
 //Kudos Routes

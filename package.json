@@ -25,6 +25,8 @@
             "passport": "^0.3.2",
             "passport-facebook": "*",
             "passport-facebook-token": "^3.3.0",
+            "passport-google": "*",
+            "passport-google-token": "^0.1.0",
             "passport-http": "*",
             "passport-http-bearer": "*",
             "passport-local": "*",

@@ -5,10 +5,10 @@ var SALT_WORK_FACTOR = 10;
 
 var userSchema = new Schema(
     {
-        firstName: {type:String, required:true},
-        lastName: {type:String, required:true},
-        email: {type:String, required:true},
-        password: {type:String, required:true},
+        firstName: {type:String},
+        lastName: {type:String},
+        email: {type:String},
+        password: {type:String},
         facebook: { 
             id: String,
             token: String,

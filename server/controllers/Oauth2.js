@@ -79,7 +79,7 @@ server.exchange(oauth2orize.exchange.password(function (client, username, passwo
     if(!scope){
         scope = client.scope;
     }
-    User.findOne({username: username}, function (err, user) {
+    User.findOne({email: username}, function (err, user) {
         if (err) return done(err)
         if (!user) return done(null, false)
         user.comparePassword(password,function(err, res){
