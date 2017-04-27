@@ -57,4 +57,11 @@ function deleteUser(req, res) {
     });
 }
 
-module.exports = {createUser, retrieveUsers, retrieveUser, updateUser, deleteUser};
+function searchUsers(req, res) {
+    User.find().or([{ firstName: new RegExp('^'+req.params.query, "i") }, { lastName: new RegExp('^'+req.params.query, "i")}]).exec(function(err, result) {
+        res.json({ message: 'search results', result });
+    });
+}
+
+
+module.exports = {createUser, retrieveUsers, retrieveUser, updateUser, deleteUser, searchUsers};

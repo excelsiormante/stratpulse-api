@@ -6,6 +6,9 @@ var bodyParser = require('body-parser');
 var mongoose = require('mongoose');
 mongoose.Promise = global.Promise;
 var session = require('express-session');
+var passport = require('passport');
+var redis = require('redis');
+var path = require('path');
 
 var app = module.exports = express();
 
@@ -23,6 +26,19 @@ app.use(session({
       resave: true
 }));
 
+var client = redis.createClient(); //creates a new client redis
+client.on('error', function(res, req) {
+    console.log(res);
+});
+
+client.on('ready', function() {
+    console.log('redis connected');
+});
+
+//app.use(passport.initialize());
+//app.use(passport.session());
+
+
 //** routes ** //
 var routes = require('./routes.js');
 console.log('> starting server');
@@ -37,13 +53,18 @@ mongoose.connect(mongodbConf.uri[app.settings.env], function(err, res) {
 });
 
 
+
 // *** config middleware *** //
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 
+
+app.use('/static', express.static(path.join(__dirname, 'assets')));
+global.appRoot = path.resolve(__dirname);
+
 // *** main routes *** //
 app.use('/',routes)
-
+	
 var server   = http.createServer(app);
 
 server.listen(app.get('port'), function() {
@@ -51,4 +72,4 @@ server.listen(app.get('port'), function() {
 });
 
 module.exports = app;
-
+module.exports = client;

@@ -34,6 +34,8 @@ server.deserializeClient(function(id, callback) {
     });
 });
 
+
+
 // Register supported grant types.
 //
 // OAuth 2.0 specifies a framework that allows users to grant client
@@ -95,13 +97,13 @@ server.exchange(oauth2orize.exchange.password(function (client, username, passwo
                 token: tokenHash, 
                 expirationDate: expirationDate, 
                 clientId: client._id, 
-                userId: username, 
+                userId: user._id, 
                 scope: scope
             });
             var RToken = new RefreshTokenModel({
                 refreshToken: refreshTokenHash, 
                 clientId: client._id, 
-                userId: username
+                userId: user._id
             });
             AToken.save((err,aToken) => {
                 if(err) {
@@ -142,6 +144,43 @@ server.exchange(oauth2orize.exchange.code(function(client, code, redirectUri, ca
             });
         });
     });
+}));
+
+
+server.exchange(oauth2orize.exchange.clientCredentials(function(userClient, scope, done) {
+        if(!scope){
+            scope = userClient.client.scope;
+        }
+        var token = uid(256)
+        var refreshToken = uid(256)
+        var tokenHash = crypto.createHash('sha1').update(token).digest('hex')
+        var refreshTokenHash = crypto.createHash('sha1').update(refreshToken).digest('hex')
+        var expirationDate = new Date(new Date().getTime() + (3600 * 1000))
+        var AToken = new AccessTokenModel({
+            token: tokenHash, 
+            expirationDate: expirationDate, 
+            clientId: userClient.client._id, 
+            userId: userClient.user._id, 
+            scope: scope
+        });
+        var RToken = new RefreshTokenModel({
+            refreshToken: refreshTokenHash, 
+            clientId: userClient.client._id, 
+            userId: userClient.user._id
+        });
+        AToken.save((err,aToken) => {
+            if(err) {
+                done(err);
+            }else{
+                RToken.save((err,rToken) => {
+                    if(err) {
+                        done(err);
+                    }else{
+                        done(null, AToken);//, rToken, {token:aToken, expires_in: expirationDate});
+                    }
+                });
+            }
+        });
 }));
 
 // user authorization endpoint

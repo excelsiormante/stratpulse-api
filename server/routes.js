@@ -3,10 +3,17 @@ var passport = require('passport');
 var router = Express.Router();
 var userController = require('./controllers/User');
 var authController = require('./controllers/Auth');
-var kudosController = require('./controllers/Kudos');
+var commendController = require('./controllers/Commend');
 var positionController = require('./controllers/Position');
 var oauth2Controller = require('./controllers/Oauth2');
 var clientController = require('./controllers/Client');
+var uploadLib = require('./libraries/Uploader');
+
+
+router.route('/auth/token')
+    .post(authController.isBearerAuthenticated, function(req,res){
+            res.send('valid');
+        });
 
 router.route('/user')
     .get(
@@ -25,6 +32,11 @@ router.route('/user/:id')
         authController.isBearerAuthenticated, 
         userController.updateUser);
 
+router.route('/user/search/:query')
+    .get(authController.isBearerAuthenticated,
+        userController.searchUsers);
+    
+
 // Create endpoint handlers for /clients
 // on live we need to disable client generation endpoints
 router.route('/client')
@@ -32,56 +44,50 @@ router.route('/client')
         clientController.createClient)
     .get(authController.isAuthenticated, 
         clientController.retrieveClient);
+
+
 router.route('/auth/password')  
     .post(authController.isResourceOwnerAuthenticated, 
         oauth2Controller.token);
-router.route('/auth/facebook')
-//notice how we can combo strategies and forward the results to the callbacks
-    .post(authController.isFbAuthenticated , authController.isResourceOwnerAuthenticated, oauth2Controller.token
-    );
 
-router.route('/auth/google')
-    .get(authController.isGoogleAuthenticated, authController.isResourceOwnerAuthenticated, oauth2Controller.token
-    );
+router.route('/auth/provider')  
+    .post(authController.isClientAuthenticated,
+      oauth2Controller.token);
 
+//Client plus provider strategy endpoint
 
-router.get('/auth/google/callback', function(req, res, next) {
-    passport.authenticate('google', function(err, user_record) {
-      if (err) { return next(err) }
-      next();
-   })(req, res, next);
-
-  });
+//router.route('/auth/provider')
+//    .get(authController.isProviderAuthenticated);
 
 
-//Kudos Routes
-router.route('/kudos')
+//Commend Routes
+router.route('/commend')
     .get(
         authController.isBearerAuthenticated,
-        kudosController.retrieveAllKudos)
-    .post(kudosController.createKudos); 
+        commendController.retrieveAllCommend)
+    .post(commendController.createCommend); 
 
 
-router.route('/kudos/:id')
+router.route('/commend/:id')
     .get(
         authController.isBearerAuthenticated, 
-        kudosController.retrieveKudos)
+        commendController.retrieveCommend)
     .delete(
         authController.isBearerAuthenticated, 
-        kudosController.deleteKudos)
+        commendController.deleteCommend)
     .patch(
         authController.isBearerAuthenticated, 
-        kudosController.updateKudos);
+        commendController.updateCommend);
 
-router.route('/kudos/:to')
+router.route('/commend_to/:to')
     .get(
         authController.isBearerAuthenticated,
-        kudosController.retrieveAllUserKudos); 
+        commendController.retrieveAllUserCommend); 
 
-router.route('/kudos/:by')
+router.route('/commend_by/:by')
     .get(
         authController.isBearerAuthenticated,
-        kudosController.retrieveKudosMadeByUser); 
+        commendController.retrieveCommendMadeByUser); 
 
 
 //Position Routes
@@ -103,6 +109,9 @@ router.route('/position/:id')
         authController.isBearerAuthenticated, 
         positionController.updatePosition);
 
+
+router.route('/upload')
+    .post(uploadLib.uploadImage);
 
 module.exports = router;
 

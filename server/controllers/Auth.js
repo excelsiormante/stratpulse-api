@@ -9,15 +9,13 @@ var BearerStrategy          = require('passport-http-bearer').Strategy;
 var ResourceOwnerPasswordStrategy  = require('passport-oauth2-resource-owner-password').Strategy;
 var FacebookTokenStrategy = require('passport-facebook-token');
 var GoogleStrategy = require('passport-google-oauth').OAuth2Strategy;
-//var GoogleTokenStrategy = require('passport-google-token').Strategy;
 
 //MODELS
 var UserModel = require('../models/User');
 var ClientModel = require('../models/Client');
 var AccessTokenModel = require('../models/AccessToken');
 
-var fbOptions = authConf.facebook;
-var googleOptions = authConf.google
+var ProviderAuth = require('../libraries/ProviderAuth'); 
 
 passport.use(new LocalStrategy(
     function(username, password, done) {
@@ -58,38 +56,50 @@ passport.use(new BasicStrategy(
     }
 ));
 
-passport.use(new ClientPasswordStrategy(
-    function(clientId, clientSecret, done) {
-        ClientModel.findOne({ clientId: clientId }, function(err, client) {
-            if (err) { return done(err); }
-            if (!client) { return done(null, false); }
-            if (client.clientSecret != clientSecret) { return done(null, false); }
-            return done(null, client);
-        });
-    }
-));
+passport.use('client-password', new ClientPasswordStrategy(
+    {
+        passReqToCallback: true
+    },
+    function(req, client_id , client_secret, callback) {
 
-passport.use('client-basic', new BasicStrategy(
-    function(username, password, callback) {
-        Client.findOne({ id: username }, function (err, client) {
+        ClientModel.findOne({ id: client_id }, function (err, _client) {
             if (err) { return callback(err); }
-            if (!client || client.secret !== password) { return callback(null, false); }
-            return callback(null, client);
+            if (!_client || _client.secret !== client_secret) { return callback(null, false); }
+            
+            //Do something with provider
+            ProviderAuth.getUserInfo(req.body.access_token, req.body.provider, req.body.token_type, 
+                function(err, userInfo){
+                    if(err){
+                        return callback(err)
+                    }
+                    if(!userInfo){
+                        return callback(null,false);
+                    }
+                    var userClient = {
+                        user : userInfo,
+                        client : _client
+                    };
+                    return callback(null, userClient);
+                });
+
         });
     }
 ));
 
 passport.use(new BearerStrategy(
+    
     function(accessToken, callback) {
+        
         AccessTokenModel.findOne({token: accessToken }, function (err, token) {
             if (err) { return callback(err); }
             if (!token) { return callback(null, false); }
-            UserModel.findOne({ username: token.userId }, function (err, user) {
+            UserModel.findOne({ _id: token.userId }, function (err, user) {
                 if (err) { return callback(err); }
                 if (!user) { return callback(null, false); }
                 callback(null, user, { scope: '*' });
             });
         });
+            
     }
 ));
 
@@ -112,7 +122,7 @@ passport.use("clientPassword", new ClientPasswordStrategy(
     }
 ));
 
-
+/*
 passport.use('facebook-token', new FacebookTokenStrategy(
     {//authConf.facebook
         clientID      : authConf.facebook.clientID,
@@ -132,15 +142,16 @@ passport.use('facebook-token', new FacebookTokenStrategy(
         });
     }
 ));
-
+*/
 
 
 passport.use(new GoogleStrategy({
 
-        clientID        : authConf.google.clientID,
-        clientSecret    : authConf.google.clientSecret,
-        callbackURL     : authConf.google.callbackURL,
-        passReqToCallBack: true
+        scope : ['profile', 'email'],
+        clientID          : authConf.google.clientID,
+        clientSecret      : authConf.google.clientSecret,
+        callbackURL       : authConf.google.callbackURL,
+        passReqToCallBack : true
 
     },
     function(token, refreshToken, profile, done) {
@@ -148,14 +159,12 @@ passport.use(new GoogleStrategy({
         // make the code asynchronous
         // User.findOne won't fire until we have all our data back from Google
         process.nextTick(function() {
-
             // try to find the user based on their google id
             UserModel.findOne({ 'google.id' : profile.id }, function(err, user) {
                 if (err)
                     return done(err);
 
                 if (user) {
-
                     // if a user is found, log them in
                     return done(null, user);
                 } else {
@@ -172,8 +181,8 @@ passport.use(new GoogleStrategy({
                     // save the user
                     newUser.save(function(err) {
                         if (err)
-                            throw err;
-                        return done(null, newUser);
+                            {throw err;}
+                        return done(err, newUser);
                     });
                 }
             });
@@ -187,7 +196,9 @@ passport.use(new GoogleStrategy({
 exports.isAuthenticated = passport.authenticate(['basic', 'bearer'], { session : false });
 exports.isBearerAuthenticated = passport.authenticate('bearer', { session: false });
 exports.isResourceOwnerAuthenticated = passport.authenticate('clientPassword', { session : false });
-exports.isFbAuthenticated = passport.authenticate('facebook-token',{session : false } );
-exports.isGoogleAuthenticated = passport.authenticate('google', { scope : ['profile', 'email'] });
+exports.isClientAuthenticated = passport.authenticate('client-password', { session : false });
+exports.isGoogleAuthenticated = passport.authenticate('google', {session : false});
+exports.isGoogleAuthenticatedCallBack = passport.authenticate('google', { session: false, failureRedirect: "/" })
+//exports.isFbAuthenticated = passport.authenticate('facebook-token',{session : false } );
 
 

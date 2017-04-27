@@ -1,4 +1,4 @@
-socialNetworkCredentials = {
+    socialNetworkCredentials = {
 
     facebook : {
         clientID      : '540640149461785',
@@ -15,7 +15,8 @@ socialNetworkCredentials = {
     google : {
         clientID      : '235530962171-vbkld48aancdlpihgkfilsklecb3m0bu.apps.googleusercontent.com',
         clientSecret  : 'vXSK0bfsbiSFcASDFDMhuZbx',
-        callbackURL   : 'http://localhost:3000/auth/google/callback'
+        callbackURL   : 'http://localhost:3000/auth/google/callback',
+        scope         : ['profile', 'email']
     }
 
 };
